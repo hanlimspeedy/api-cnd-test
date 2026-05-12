@@ -1,56 +1,85 @@
-# CDN Statistics API `curl` Samples (`cloud_key_value`)
+# CDN Statistics API `curl` 샘플: API Key 방식
 
-These scripts use the request shape that was verified against the live API.
+API Key 인증으로 CDN Statistics API를 호출하는 `curl` 샘플입니다. 실제 서버에서 정상 동작이 확인된 `api_request` 래핑 구조를 사용합니다.
 
-## Files
+## 파일 구성
 
-- `010_verify_account_and_list_available_domains.sh`
-- `020_fetch_reported_domain_daily_transfer.sh`
-- `030_fetch_reported_domain_daily_traffic.sh`
-- `040_analyze_transfer_response_values.sh`
-- `050_analyze_traffic_response_values.sh`
+| 파일 | 설명 |
+| --- | --- |
+| `010_verify_account_and_list_available_domains.sh` | 계정 인증과 도메인 목록 조회 |
+| `020_fetch_reported_domain_daily_transfer.sh` | 메일에 나온 도메인의 일 단위 전송량 조회 |
+| `030_fetch_reported_domain_daily_traffic.sh` | 메일에 나온 도메인의 일 단위 트래픽 조회 |
+| `040_analyze_transfer_response_values.sh` | 저장된 전송량 응답에서 실제 값을 추출하고 요약 |
+| `050_analyze_traffic_response_values.sh` | 저장된 트래픽 응답에서 실제 값을 추출하고 요약 |
 
-## Prepare
+## 준비
 
-1. Use the repo-root `.env` file.
-2. Fill line 1 with the API ID and line 2 with the API key.
-
-Expected file format:
+저장소 최상위에 `.env` 파일을 둡니다.
 
 ```text
 your_api_id
 your_cloud_key_value
 ```
 
-## Run
+첫 번째 줄은 `common.id`로 전송됩니다.
+두 번째 줄은 `common.cloud_key_value`로 전송됩니다.
+
+`.env`는 git ignore 대상입니다.
+
+## 실행
 
 ```bash
 ./010_verify_account_and_list_available_domains.sh
 ./020_fetch_reported_domain_daily_transfer.sh
-./030_fetch_reported_domain_daily_traffic.sh
 ./040_analyze_transfer_response_values.sh
+./030_fetch_reported_domain_daily_traffic.sh
 ./050_analyze_traffic_response_values.sh
 ```
 
-Optional arguments for `020` and `030`:
+`020`, `030` 스크립트는 조회 조건을 인자로 바꿀 수 있습니다.
 
 ```bash
 ./020_fetch_reported_domain_daily_transfer.sh DOMAIN START_DATE END_DATE DATE_INTERVAL
 ./030_fetch_reported_domain_daily_traffic.sh DOMAIN START_DATE END_DATE DATE_INTERVAL
 ```
 
-Defaults:
+기본값:
 
-- `DOMAIN=spdy-flexg-main.flexgate.co.kr`
-- `START_DATE=202604270000`
-- `END_DATE=202604272359`
-- `DATE_INTERVAL=3`
+| 항목 | 값 |
+| --- | --- |
+| `DOMAIN` | `spdy-flexg-main.flexgate.co.kr` |
+| `START_DATE` | `202604270000` |
+| `END_DATE` | `202604272359` |
+| `DATE_INTERVAL` | `3` |
 
-## Notes
+## 성공 기준
 
-- The live API requires the request body to be wrapped with `api_request`.
-- Authentication uses `common.id` and `common.cloud_key_value`.
-- Responses are saved to `out/*.json`.
-- Success is determined by `api_response.data.action_result.result_code == "200"`.
-- `040` reads the saved transfer response and prints each date/value plus summary stats.
-- `050` reads the saved traffic response and prints each date/value plus summary stats.
+- API 응답의 `api_response.data.action_result.result_code`가 `200`이어야 합니다.
+- 전송량 응답에는 `transfer` 배열이 있어야 합니다.
+- 트래픽 응답에는 `traffic` 배열이 있어야 합니다.
+- 분석 스크립트가 날짜별 실제 값을 출력해야 합니다.
+
+검증 시 확인된 값:
+
+```text
+transfer 20260427 = 5383917778640 bytes
+traffic  20260427 = 1825459657 bps
+```
+
+## 출력 파일
+
+원본 응답은 `out/` 아래에 저장됩니다.
+
+```text
+out/010_verify_account_and_list_available_domains.json
+out/020_fetch_reported_domain_daily_transfer.json
+out/030_fetch_reported_domain_daily_traffic.json
+```
+
+`out/`은 git ignore 대상입니다.
+
+## 참고
+
+- 요청 본문은 반드시 `api_request`로 감쌉니다.
+- 인증 필드는 `common.id`와 `common.cloud_key_value`를 사용합니다.
+- HTTP 상태 코드는 `201`로 내려오더라도, 실제 성공 여부는 JSON 본문의 `result_code`를 기준으로 판단합니다.
